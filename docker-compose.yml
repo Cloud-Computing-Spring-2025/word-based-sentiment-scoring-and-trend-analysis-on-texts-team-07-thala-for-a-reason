@@ -1,0 +1,127 @@
+version: "3"
+services:
+  # Namenode service for managing the HDFS metadata
+  namenode:
+    image: bde2020/hadoop-namenode:2.0.0-hadoop2.7.4-java8
+    container_name: namenode
+    volumes:
+      - namenode:/hadoop/dfs/name  # Volume mount for HDFS NameNode data
+    environment:
+      - CLUSTER_NAME=test  # Set the cluster name
+    env_file:
+      - ./hadoop-hive.env  # Load environment variables from this file
+    ports:
+      - "50070:50070"  # Expose the NameNode web UI on port 50070
+
+  # Datanode 1 service to store data in HDFS
+  datanode1:
+    image: bde2020/hadoop-datanode:2.0.0-hadoop2.7.4-java8
+    container_name: datanode1
+    volumes:
+      - datanode1:/hadoop/dfs/data  # Volume mount for Datanode 1 data
+    env_file:
+      - ./hadoop-hive.env  # Load environment variables from this file
+    environment:
+      SERVICE_PRECONDITION: "namenode:50070"  # Ensure NameNode is ready before starting Datanode
+    ports:
+      - "50075:50075"  # Expose Datanode 1 status on port 50075
+
+  # Datanode 2 service to store data in HDFS
+  datanode2:
+    image: bde2020/hadoop-datanode:2.0.0-hadoop2.7.4-java8
+    container_name: datanode2
+    volumes:
+      - datanode2:/hadoop/dfs/data  # Volume mount for Datanode 2 data
+    env_file:
+      - ./hadoop-hive.env  # Load environment variables from this file
+    environment:
+      SERVICE_PRECONDITION: "namenode:50070"  # Ensure NameNode is ready before starting Datanode
+    ports:
+      - "50076:50075"  # Expose Datanode 2 status on port 50076
+
+  # Datanode 3 service to store data in HDFS
+  datanode3:
+    image: bde2020/hadoop-datanode:2.0.0-hadoop2.7.4-java8
+    container_name: datanode3
+    volumes:
+      - datanode3:/hadoop/dfs/data  # Volume mount for Datanode 3 data
+    env_file:
+      - ./hadoop-hive.env  # Load environment variables from this file
+    environment:
+      SERVICE_PRECONDITION: "namenode:50070"  # Ensure NameNode is ready before starting Datanode
+    ports:
+      - "50077:50075"  # Expose Datanode 3 status on port 50077
+
+  # ResourceManager for managing YARN resources
+  resourcemanager:
+    image: bde2020/hadoop-resourcemanager:2.0.0-hadoop2.7.4-java8
+    container_name: resourcemanager
+    environment:
+      SERVICE_PRECONDITION: "namenode:50070 datanode1:50075 datanode2:50075 datanode3:50075"  # Wait for NameNode and Datanodes to be ready
+    env_file:
+      - ./hadoop-hive.env  # Load environment variables from this file
+
+  # Hive Server for managing Hive queries
+  hive-server:
+    image: bde2020/hive:2.3.2-postgresql-metastore
+    container_name: hive-server
+    env_file:
+      - ./hadoop-hive.env  # Load environment variables from this file
+    environment:
+      HIVE_CORE_CONF_javax_jdo_option_ConnectionURL: "jdbc:postgresql://hive-metastore/metastore"  # Connect to Hive Metastore
+      SERVICE_PRECONDITION: "hive-metastore:9083"  # Ensure Hive Metastore is ready before starting Hive Server
+    ports:
+      - "10000:10000"  # Expose Hive Server on port 10000
+
+  # Hive Metastore for storing Hive metadata
+  hive-metastore:
+    image: bde2020/hive:2.3.2-postgresql-metastore
+    container_name: hive-metastore
+    env_file:
+      - ./hadoop-hive.env  # Load environment variables from this file
+    command: /opt/hive/bin/hive --service metastore  # Start Hive Metastore service
+    environment:
+      SERVICE_PRECONDITION: "namenode:50070 datanode1:50075 datanode2:50075 datanode3:50075 hive-metastore-postgresql:5432 resourcemanager:8088"  # Ensure all dependencies are ready
+    ports:
+      - "9083:9083"  # Expose Hive Metastore on port 9083
+
+  # PostgreSQL for Hive Metastore database
+  hive-metastore-postgresql:
+    image: bde2020/hive-metastore-postgresql:2.3.0
+    container_name: hive-metastore-postgresql
+    ports:
+      - "5432:5432"  # Expose PostgreSQL on port 5432
+
+  # PostgreSQL database for Hue (Hue DB)
+  huedb:
+    image: postgres:12.1-alpine
+    container_name: huedb
+    volumes:
+      - pg_data:/var/lib/postgresql/data/  # Volume mount for PostgreSQL data
+    ports:
+      - "5432"  # Expose PostgreSQL on port 5432
+    env_file:
+      - ./hadoop-hive.env  # Load environment variables from this file
+    environment:
+      SERVICE_PRECONDITION: "namenode:50070 datanode1:50075 datanode2:50075 datanode3:50075 hive-metastore-postgresql:5432 resourcemanager:8088 hive-metastore:9083"  # Wait for services to be ready
+
+  # Hue service for Hadoop UI
+  hue:
+    image: gethue/hue:4.6.0
+    container_name: hue
+    environment:
+      SERVICE_PRECONDITION: "namenode:50070 datanode1:50075 datanode2:50075 datanode3:50075 hive-metastore-postgresql:5432 resourcemanager:8088 hive-metastore:9083 huedb:5000"  # Wait for all required services to be ready
+    ports:
+      - "8888:8888"  # Expose Hue on port 8888
+    volumes:
+      - ./hue-overrides.ini:/usr/share/hue/desktop/conf/hue-overrides.ini  # Custom configuration for Hue
+    links:
+      - huedb  # Link Hue to the PostgreSQL database (deprecated, consider using depends_on)
+
+# Define the volumes that are shared between containers
+volumes:
+  namenode:  # Volume for NameNode data
+  datanode1:  # Volume for Datanode 1 data
+  datanode2:  # Volume for Datanode 2 data
+  datanode3:  # Volume for Datanode 3 data
+  pg_data:  # Volume for PostgreSQL data (Hue DB and Hive Metastore DB)
