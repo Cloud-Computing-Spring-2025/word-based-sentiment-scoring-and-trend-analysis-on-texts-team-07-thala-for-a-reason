@@ -1,3 +1,3 @@
 com/example/wordanalysis/TextPreprocessingDriver.class
-com/example/wordanalysis/TextPreprocessingReducer.class
 com/example/wordanalysis/TextPreprocessingMapper.class
+com/example/wordanalysis/TextPreprocessingReducer.class
