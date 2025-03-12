@@ -1,3 +1,6 @@
+/workspaces/word-based-sentiment-scoring-and-trend-analysis-on-texts-team-07-thala-for-a-reason/src/main/java/com/example/wordanalysis/WordFrequencyMapper.java
 /workspaces/word-based-sentiment-scoring-and-trend-analysis-on-texts-team-07-thala-for-a-reason/src/main/java/com/example/wordanalysis/TextPreprocessingDriver.java
 /workspaces/word-based-sentiment-scoring-and-trend-analysis-on-texts-team-07-thala-for-a-reason/src/main/java/com/example/wordanalysis/TextPreprocessingReducer.java
+/workspaces/word-based-sentiment-scoring-and-trend-analysis-on-texts-team-07-thala-for-a-reason/src/main/java/com/example/wordanalysis/WordFrequencyDriver.java
+/workspaces/word-based-sentiment-scoring-and-trend-analysis-on-texts-team-07-thala-for-a-reason/src/main/java/com/example/wordanalysis/WordFrequencyReducer.java
 /workspaces/word-based-sentiment-scoring-and-trend-analysis-on-texts-team-07-thala-for-a-reason/src/main/java/com/example/wordanalysis/TextPreprocessingMapper.java
