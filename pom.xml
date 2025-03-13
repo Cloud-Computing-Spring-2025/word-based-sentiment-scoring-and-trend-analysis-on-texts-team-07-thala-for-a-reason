@@ -34,11 +34,13 @@
         <dependency>
             <groupId>com.google.protobuf</groupId>
             <artifactId>protobuf-java</artifactId>
-            <version>3.11.4</version> <!-- Use a version compatible with Stanford NLP -->
+            <version>3.11.4</version>
         </dependency>
     </dependencies>
 
     <build>
+        <finalName>sentiment-analysis-task3</finalName> <!-- Custom JAR name for Task 3 -->
+        
         <plugins>
             <!-- Compiler Plugin -->
             <plugin>
@@ -51,7 +53,7 @@
                 </configuration>
             </plugin>
 
-            <!-- Shade Plugin for Relocation -->
+            <!-- Shade Plugin for Creating Fat JAR -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-shade-plugin</artifactId>
@@ -72,7 +74,7 @@
                             </relocations>
                             <transformers>
                                 <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
-                                    <mainClass>com.example.wordanalysis.WordFrequencyDriver</mainClass>
+                                    <mainClass>com.example.wordanalysis.SentimentScoreDriver</mainClass>
                                 </transformer>
                             </transformers>
                         </configuration>
