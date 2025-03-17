@@ -39,7 +39,7 @@
     </dependencies>
 
     <build>
-        <finalName>sentiment-analysis-task3</finalName> <!-- Custom JAR name for Task 3 -->
+        <finalName>trend-analysis-task4</finalName> <!-- Updated for Task 4 -->
         
         <plugins>
             <!-- Compiler Plugin -->
@@ -65,16 +65,9 @@
                             <goal>shade</goal>
                         </goals>
                         <configuration>
-                            <relocations>
-                                <!-- Relocate protobuf to avoid conflicts -->
-                                <relocation>
-                                    <pattern>com.google.protobuf</pattern>
-                                    <shadedPattern>shaded.protobuf</shadedPattern>
-                                </relocation>
-                            </relocations>
                             <transformers>
                                 <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
-                                    <mainClass>com.example.wordanalysis.SentimentScoreDriver</mainClass>
+                                    <mainClass>com.example.wordanalysis.TrendAnalysisDriver</mainClass> <!-- Ensure this is the correct package -->
                                 </transformer>
                             </transformers>
                         </configuration>
