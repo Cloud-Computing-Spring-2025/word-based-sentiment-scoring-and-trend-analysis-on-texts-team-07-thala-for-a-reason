@@ -42,7 +42,7 @@ Each record contains:
 ## Implementation 
 This task is implemented using Java MapReduce
 
-### Mapper: `WordFrequencyMapper.java`
+### Mapper: `TextpreprocessingMapper.java`
 This component reads the dataset
 
 ```java
@@ -93,7 +93,7 @@ public class PreprocessingMapper extends Mapper<LongWritable, Text, Text, Text> 
     }
 }
 ```
-### Reducer: `WordFrequencyReducer.java`
+### Reducer: `TextpreprocessingReducer.java`
 
 ```java
 package com.example.preprocessing;
@@ -113,7 +113,7 @@ public class PreprocessingReducer extends Reducer<Text, Text, Text, Text> {
 }
 ```
 
-### Driver: `WordFrequencydriver.java`
+### Driver: `Textpreprocessingdriver.java`
 
 ```java
 package com.example.preprocessing;
@@ -170,8 +170,7 @@ hadoop jar word-analysis.jar com.example.wordanalysis.WordFrequencyDriver /input
 hdfs dfs -cat /output/part-r-00000
 ```
 
-## Output Format
-The output contains the frequency of each lemmatized word per book and year:
+## Output 
 ```
 <BookID>,<Year>    <Cleaned Sentence>
 ```
