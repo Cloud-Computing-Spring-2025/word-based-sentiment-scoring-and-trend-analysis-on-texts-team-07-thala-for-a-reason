@@ -16,6 +16,174 @@ Ensure you have the following installed:
 Dataset
 
 Download books from Project Gutenberg and store them in the data/ directory.
+
+# Task 1
+
+## Overview 
+The goal of this task is to extract and clean raw text data from historical books (from sources like Project Gutenberg) and standardize it. The output of this task is cleaned text lines tagged with metadata (book ID and year) for each sentence or line in the text. This output is used in subsequent tasks like word frequency analysis and sentiment scoring.
+
+## Input Dataset 
+Each line of the input data contains metadata and a raw text sentence
+```
+<BookID>,<Year>\t<Sentence>
+```
+Example:
+```
+1,1885\tcut during certain region
+10,1841\tdrop party politics none
+100,1778\teach maybe method late
+1000,1717\tnight control make look
+```
+Each record contains:
+- `BookID`: Unique identifier for a book.
+- `Year`: The year associated with the text.
+- `Title`: A textual excerpt from the book.
+
+## Implementation 
+This task is implemented using Java MapReduce
+
+### Mapper: `WordFrequencyMapper.java`
+This component reads the dataset
+
+```java
+package com.example.preprocessing;
+
+import org.apache.hadoop.io.LongWritable;
+import org.apache.hadoop.io.Text;
+import org.apache.hadoop.mapreduce.Mapper;
+
+import java.io.*;
+import java.util.*;
+import java.util.regex.Pattern;
+
+public class PreprocessingMapper extends Mapper<LongWritable, Text, Text, Text> {
+    private Set<String> stopWords = new HashSet<>();
+    private static final Pattern PUNCTUATION = Pattern.compile("\\p{Punct}");
+
+    @Override
+    protected void setup(Context context) throws IOException {
+        // Load stopwords from local resource or distributed cache
+        InputStream in = getClass().getClassLoader().getResourceAsStream("stopwords.txt");
+        if (in != null) {
+            BufferedReader reader = new BufferedReader(new InputStreamReader(in));
+            String line;
+            while ((line = reader.readLine()) != null) {
+                stopWords.add(line.trim().toLowerCase());
+            }
+        }
+    }
+
+    @Override
+    protected void map(LongWritable key, Text value, Context context) throws IOException, InterruptedException {
+        String[] parts = value.toString().split("\t");
+        if (parts.length != 2) return;
+
+        String metadata = parts[0]; // "bookID,year"
+        String text = parts[1].toLowerCase();
+        text = PUNCTUATION.matcher(text).replaceAll(""); // remove punctuation
+
+        StringBuilder cleaned = new StringBuilder();
+        for (String token : text.split("\\s+")) {
+            if (!stopWords.contains(token) && !token.isBlank()) {
+                cleaned.append(token).append(" ");
+            }
+        }
+
+        context.write(new Text(metadata), new Text(cleaned.toString().trim()));
+    }
+}
+```
+### Reducer: `WordFrequencyReducer.java`
+
+```java
+package com.example.preprocessing;
+
+import org.apache.hadoop.io.Text;
+import org.apache.hadoop.mapreduce.Reducer;
+
+import java.io.IOException;
+
+public class PreprocessingReducer extends Reducer<Text, Text, Text, Text> {
+    @Override
+    protected void reduce(Text key, Iterable<Text> values, Context context) throws IOException, InterruptedException {
+        for (Text cleanedSentence : values) {
+            context.write(key, cleanedSentence);
+        }
+    }
+}
+```
+
+### Driver: `WordFrequencydriver.java`
+
+```java
+package com.example.preprocessing;
+
+import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.io.Text;
+import org.apache.hadoop.mapreduce.Job;
+import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
+import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
+
+public class PreprocessingDriver {
+    public static void main(String[] args) throws Exception {
+        if (args.length != 2) {
+            System.err.println("Usage: PreprocessingDriver <input path> <output path>");
+            System.exit(-1);
+        }
+
+        Job job = Job.getInstance(new Configuration(), "Data Preprocessing");
+        job.setJarByClass(PreprocessingDriver.class);
+
+        job.setMapperClass(PreprocessingMapper.class);
+        job.setReducerClass(PreprocessingReducer.class);
+
+        job.setOutputKeyClass(Text.class);
+        job.setOutputValueClass(Text.class);
+
+        FileInputFormat.addInputPath(job, new Path(args[0]));
+        FileOutputFormat.setOutputPath(job, new Path(args[1]));
+
+        System.exit(job.waitForCompletion(true) ? 0 : 1);
+    }
+}
+```
+
+## Running the Job
+### Compilation & Packaging
+Ensure Hadoop and Stanford NLP dependencies are properly configured. Use Maven to compile and package the project:
+```
+mvn clean package
+```
+
+### Execution in Hadoop
+1. Upload input data to HDFS:
+```
+hdfs dfs -put input_data.txt /input/docs
+```
+2. Run the MapReduce job:
+```
+hadoop jar word-analysis.jar com.example.wordanalysis.WordFrequencyDriver /input/docs /output
+```
+3. Retrieve the results:
+```
+hdfs dfs -cat /output/part-r-00000
+```
+
+## Output Format
+The output contains the frequency of each lemmatized word per book and year:
+```
+<BookID>,<Year>    <Cleaned Sentence>
+```
+Example:
+```
+1,1885    quick brown fox jumps lazy dog
+2,1800    hope thing feathers
+```
+
+
+
+
 # Task 2
 
 ## Overview
@@ -36,7 +204,7 @@ Example:
 Each record contains:
 - `BookID`: Unique identifier for a book.
 - `Year`: The year associated with the text.
-- `Sentence`: A textual excerpt from the book.
+- `Title`: A textual excerpt from the book.
 
 ## Implementation
 This task is implemented using Java MapReduce with Stanford NLP for lemmatization.
