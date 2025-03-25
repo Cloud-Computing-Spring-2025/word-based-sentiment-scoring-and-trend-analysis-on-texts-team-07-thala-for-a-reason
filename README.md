@@ -137,3 +137,156 @@ Example:
 1000,1717,control\t1
 ```
 
+
+# Task 3
+
+## Overview
+Sentiment Scoring: The goal is to assign sentiment scores to individual words (lemmas) from the books using the AFINN lexicon.
+Final Output: The task will produce a sentiment score per book and year, which can later be used for long-term trend analysis.
+
+## Input Dataset
+The input to Task 3 is the output from Task 2 (Word Frequency Analysis). The data is structured in a CSV-like format:
+
+Example:
+```
+bookID,year,lemma,freq
+1,1885,certain,1
+1,1885,cut,1
+1,1885,during,1
+```
+Where:
+
+bookID: Unique identifier for each book.
+year: The year the book was published.
+lemma: The lemmatized version of the word.
+freq: The frequency (how many times the word appears) in the book.
+
+Additionally, the AFINN lexicon (AFINN-lexicon.txt) is required to assign sentiment scores to words. The lexicon has the following format:
+
+```
+love    3
+hate    -2
+joy     2
+anger   -2
+```
+
+## Implementation
+###SentimentScoreDriver.java:
+The driver class sets up and runs the MapReduce job. It configures the input and output paths, specifies the Mapper (SentimentScoreMapper) and Reducer (SentimentScoreReducer), and submits the job to Hadoop for execution.
+
+```
+public static void main(String[] args) throws Exception {
+    if (args.length != 2) {
+        System.err.println("Usage: SentimentScoreDriver <input path> <output path>");
+        System.exit(-1);
+    }
+
+    // Set up Hadoop job configuration
+    Configuration conf = new Configuration();
+    Job job = Job.getInstance(conf, "Sentiment Scoring");
+
+    // Specify Mapper and Reducer
+    job.setJarByClass(SentimentScoreDriver.class);
+    job.setMapperClass(SentimentScoreMapper.class);
+    job.setReducerClass(SentimentScoreReducer.class);
+
+    // Set output key and value types
+    job.setOutputKeyClass(Text.class);
+    job.setOutputValueClass(IntWritable.class);
+
+    // Define input and output paths
+    FileInputFormat.addInputPath(job, new Path(args[0]));
+    FileOutputFormat.setOutputPath(job, new Path(args[1]));
+
+    // Execute the job
+    System.exit(job.waitForCompletion(true) ? 0 : 1);
+}
+```
+Input/Output Paths: These are passed as command-line arguments when running the job.
+Job Configuration: Sets up the Mapper and Reducer classes and output data types.
+Running the Job: The job is submitted to Hadoop for execution, which processes the input data and produces the output.
+
+### Mapper: `SentimentScoreMapper.java`
+The mapper processes each input line, looks up the sentiment score for the word (lemma) from the AFINN lexicon, and calculates the total sentiment score for each word based on its frequency.
+
+```
+protected void map(LongWritable key, Text value, Context context) throws IOException, InterruptedException {
+    String[] parts = value.toString().split("\t");
+
+    if (parts.length == 2) {
+        String[] meta = parts[0].split(",");
+        if (meta.length == 3) {
+            String bookId = meta[0];
+            String year = meta[1];
+            String word = meta[2].trim().toLowerCase();
+            int frequency = Integer.parseInt(parts[1].trim());
+
+            // Fetch sentiment score for the word
+            Integer sentimentScore = sentimentMap.get(word);
+
+            if (sentimentScore != null) {
+                int totalScore = sentimentScore * frequency;
+                String outputKey = bookId + "," + year;
+                context.write(new Text(outputKey), new IntWritable(totalScore));
+            }
+        }
+    }
+}
+    
+```
+Parsing Input: The input is split into bookID, year, lemma, and frequency.
+Lexicon Lookup: The word's sentiment score is looked up from the AFINN lexicon.
+Output: The mapper emits the cumulative sentiment score for each (bookID, year).
+
+### Reducer: `SentimentScoreReducer.java`
+The reducer aggregates the sentiment scores for each book and year. It sums the individual sentiment scores from the mapper and outputs the final cumulative sentiment score.
+
+```java
+protected void reduce(Text key, Iterable<IntWritable> values, Context context) throws IOException, InterruptedException {
+    int sum = 0;
+    for (IntWritable value : values) {
+        sum += value.get();  // Sum all sentiment scores for each book/year
+    }
+    context.write(key, new IntWritable(sum));
+}
+
+```
+Group by Key: The reducer receives all sentiment scores for a given (bookID, year).
+Aggregation: It sums up the sentiment scores for each book and year.
+Output: The final sentiment score for each book and year is emitted.
+
+## Running the Job
+### Compilation & Packaging
+Ensure Hadoop and Stanford NLP dependencies are properly configured. Use Maven to compile and package the project:
+```
+mvn clean package
+```
+
+### Execution in Hadoop
+1. Upload input data to HDFS:
+```
+hadoop fs -put input/task2_output.txt /input/task3/
+hadoop fs -put input/AFINN-lexicon.txt /input/task3/
+
+```
+2. Run the MapReduce job:
+```
+hadoop jar sentiment-analysis-task3.jar com.example.wordanalysis.SentimentScoreDriver /input/task3/task2_output.txt /output/task3
+
+```
+3. Retrieve the results:
+```
+hadoop fs -cat /output/task3/part-r-00000
+```
+4. Download the output:
+```
+docker cp resourcemanager:/opt/hadoop-2.7.4/share/hadoop/mapreduce/output/task3 ./output/
+```
+
+## Output Format
+```
+bookID,year,total_sentiment_score
+1,1885,12
+2,1800,-5
+3,1900,8
+```
