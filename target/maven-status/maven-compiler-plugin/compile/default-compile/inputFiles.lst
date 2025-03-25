@@ -1,12 +1,12 @@
-/workspaces/word-based-sentiment-scoring-and-trend-analysis-on-texts-team-07-thala-for-a-reason/src/main/java/com/example/wordanalysis/WordFrequencyMapper.java
 /workspaces/word-based-sentiment-scoring-and-trend-analysis-on-texts-team-07-thala-for-a-reason/src/main/java/com/example/wordanalysis/TextPreprocessingDriver.java
+/workspaces/word-based-sentiment-scoring-and-trend-analysis-on-texts-team-07-thala-for-a-reason/src/main/java/com/example/wordanalysis/WordFrequencyMapper.java
 /workspaces/word-based-sentiment-scoring-and-trend-analysis-on-texts-team-07-thala-for-a-reason/src/main/java/com/example/wordanalysis/TextPreprocessingReducer.java
-/workspaces/word-based-sentiment-scoring-and-trend-analysis-on-texts-team-07-thala-for-a-reason/src/main/java/com/example/wordanalysis/TrendAnalysisMapper.java
 /workspaces/word-based-sentiment-scoring-and-trend-analysis-on-texts-team-07-thala-for-a-reason/src/main/java/com/example/wordanalysis/WordFrequencyDriver.java
+/workspaces/word-based-sentiment-scoring-and-trend-analysis-on-texts-team-07-thala-for-a-reason/src/main/java/com/example/wordanalysis/TrendAnalysisMapper.java
 /workspaces/word-based-sentiment-scoring-and-trend-analysis-on-texts-team-07-thala-for-a-reason/src/main/java/com/example/wordanalysis/TrendAnalysisReducer.java
 /workspaces/word-based-sentiment-scoring-and-trend-analysis-on-texts-team-07-thala-for-a-reason/src/main/java/com/example/wordanalysis/SentimentScoreMapper.java
 /workspaces/word-based-sentiment-scoring-and-trend-analysis-on-texts-team-07-thala-for-a-reason/src/main/java/com/example/wordanalysis/TrendAnalysisDriver.java
 /workspaces/word-based-sentiment-scoring-and-trend-analysis-on-texts-team-07-thala-for-a-reason/src/main/java/com/example/wordanalysis/SentimentScoreDriver.java
-/workspaces/word-based-sentiment-scoring-and-trend-analysis-on-texts-team-07-thala-for-a-reason/src/main/java/com/example/wordanalysis/SentimentScoreReducer.java
 /workspaces/word-based-sentiment-scoring-and-trend-analysis-on-texts-team-07-thala-for-a-reason/src/main/java/com/example/wordanalysis/WordFrequencyReducer.java
+/workspaces/word-based-sentiment-scoring-and-trend-analysis-on-texts-team-07-thala-for-a-reason/src/main/java/com/example/wordanalysis/SentimentScoreReducer.java
 /workspaces/word-based-sentiment-scoring-and-trend-analysis-on-texts-team-07-thala-for-a-reason/src/main/java/com/example/wordanalysis/TextPreprocessingMapper.java

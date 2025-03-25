@@ -290,3 +290,133 @@ bookID,year,total_sentiment_score
 2,1800,-5
 3,1900,8
 ```
+
+# Task 4
+
+## Overview
+The goal of this task is to analyze and extract named entities (NER) from historical texts, categorizing words into entities like person names, locations, organizations, and dates. The output provides named entity counts per Book ID and Year, enabling historical analysis of important references in different time periods.
+
+## Input Dataset
+Each line in the input dataset follows this structure:
+```
+<BookID>,<Year>,<Lemma>    <Count>
+```
+Example:
+```
+1,1885,cut    10
+10,1841,drop    7
+100,1778,method    12
+1000,1717,control    8
+5,1923,hope    15
+8,1825,happy    9
+2,1865,angry    -5
+```
+## Sample Output 
+
+```
+1,1880s,cut	10
+10,1840s,drop	7
+100,1770s,method	12
+1000,1710s,control	8
+1880s,cut	30
+1840s,drop	20
+1770s,method	45
+1710s,control	25
+```
+
+Each record contains:
+- `BookID`: Unique identifier for a book.
+- `Year`: The year associated with the text.
+- `Sentence`: A textual excerpt from the book.
+
+# Implementation
+This task is implemented using Java MapReduce with Stanford NLP for lemmatization.
+
+### Mapper: `TrendAnalysisMapper.java`
+This component reads the dataset, tokenizes sentences into words, applies lemmatization, and emits `(bookID, year, lemma)` as the key with frequency as the value.This mapper takes the sentiment scores and word frequency data from previous tasks and maps individual years to their corresponding decades while preserving the book ID for book-level analysis.
+
+```java
+package com.example.trendanalysis;
+
+import java.io.IOException;
+import org.apache.hadoop.io.IntWritable;
+import org.apache.hadoop.io.Text;
+import org.apache.hadoop.mapreduce.Mapper;
+
+public class TrendAnalysisMapper extends Mapper<Object, Text, Text, IntWritable> {
+    private Text compositeKey = new Text();
+    private IntWritable valueOut = new IntWritable();
+
+    public void map(Object key, Text value, Context context) throws IOException, InterruptedException {
+        String[] parts = value.toString().split("\t");
+        if (parts.length < 2) return;
+
+        String[] keyParts = parts[0].split(",");
+        if (keyParts.length < 3) return;
+
+        String bookID = keyParts[0];  // Extract BookID
+        int year = Integer.parseInt(keyParts[1]);  // Extract Year
+        String wordOrSentiment = keyParts[2]; // Extract word or sentiment
+
+        int decade = (year / 10) * 10;  // Convert year to decade (e.g., 1823 → 1820s)
+
+        int count = Integer.parseInt(parts[1]);  // Extract frequency/sentiment score
+
+        // Emit (BookID, Decade) for book-level trend analysis
+        compositeKey.set(bookID + "," + decade + "," + wordOrSentiment);
+        valueOut.set(count);
+        context.write(compositeKey, valueOut);
+
+        // Emit (Decade) for overall trend analysis
+        compositeKey.set(decade + "," + wordOrSentiment);
+        context.write(compositeKey, valueOut);
+    }
+}
+```
+
+### Reducer: `TrendAnalysisReducer.java`
+This reducer aggregates word frequencies and sentiment scores per decade and per book ID.
+
+```java
+package com.example.trendanalysis;
+
+import java.io.IOException;
+import org.apache.hadoop.io.IntWritable;
+import org.apache.hadoop.io.Text;
+import org.apache.hadoop.mapreduce.Reducer;
+
+public class TrendAnalysisReducer extends Reducer<Text, IntWritable, Text, IntWritable> {
+    private IntWritable result = new IntWritable();
+
+    public void reduce(Text key, Iterable<IntWritable> values, Context context) throws IOException, InterruptedException {
+        int sum = 0;
+        for (IntWritable val : values) {
+            sum += val.get();
+        }
+        result.set(sum);
+        context.write(key, result);
+    }
+}
+
+```
+
+## Running the Job
+### Compilation & Packaging
+Ensure Hadoop and Stanford NLP dependencies are properly configured. Use Maven to compile and package the project:
+```
+mvn clean package
+```
+
+### Execution in Hadoop
+1. Upload input data to HDFS:
+```
+hdfs dfs -put input_data.txt /input/docs
+```
+2. Run the MapReduce job:
+```
+hadoop jar word-analysis.jar com.example.wordanalysis.WordFrequencyDriver /input/docs /output
+```
+3. Retrieve the results:
+```
+hdfs dfs -cat /output/part-r-00000
+```
