@@ -171,7 +171,7 @@ anger   -2
 ```
 
 ## Implementation
-###SentimentScoreDriver.java:
+### SentimentScoreDriver.java:
 The driver class sets up and runs the MapReduce job. It configures the input and output paths, specifies the Mapper (SentimentScoreMapper) and Reducer (SentimentScoreReducer), and submits the job to Hadoop for execution.
 
 ```
