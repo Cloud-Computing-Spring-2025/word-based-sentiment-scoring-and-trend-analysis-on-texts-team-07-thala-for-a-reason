@@ -19,7 +19,7 @@ Download books from Project Gutenberg and store them in the data/ directory.
 # Task 2
 
 ## Overview
-This task focuses on word frequency analysis with lemmatization using Apache Hadoop MapReduce. The goal is to process historical text data, extract word occurrences, and apply lemmatization to normalize words before aggregating their frequencies. This is Task 2 in a larger project on sentiment scoring and trend analysis.
+The goal of this task is to compute word frequencies by splitting sentences into individual words and applying lemmatization to normalize variations. The output provides word frequencies per book ID and year, enabling historical text analysis.
 
 ## Input Dataset
 The dataset consists of historical texts, where each line is formatted as:
@@ -42,7 +42,7 @@ Each record contains:
 This task is implemented using Java MapReduce with Stanford NLP for lemmatization.
 
 ### Mapper: `WordFrequencyMapper.java`
-This component reads the dataset, tokenizes sentences into words, applies lemmatization, and emits `(bookID, year, lemma)` as the key with `1` as the value.
+This component reads the dataset, tokenizes sentences into words, applies lemmatization, and emits `(bookID, year, lemma)` as the key with frequency as the value.
 
 ```java
 package com.example.wordanalysis;
