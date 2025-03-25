@@ -174,7 +174,7 @@ anger   -2
 ### SentimentScoreDriver.java:
 The driver class sets up and runs the MapReduce job. It configures the input and output paths, specifies the Mapper (SentimentScoreMapper) and Reducer (SentimentScoreReducer), and submits the job to Hadoop for execution.
 
-```
+```java
 public static void main(String[] args) throws Exception {
     if (args.length != 2) {
         System.err.println("Usage: SentimentScoreDriver <input path> <output path>");
@@ -209,7 +209,7 @@ Running the Job: The job is submitted to Hadoop for execution, which processes t
 ### Mapper: `SentimentScoreMapper.java`
 The mapper processes each input line, looks up the sentiment score for the word (lemma) from the AFINN lexicon, and calculates the total sentiment score for each word based on its frequency.
 
-```
+```java
 protected void map(LongWritable key, Text value, Context context) throws IOException, InterruptedException {
     String[] parts = value.toString().split("\t");
 
