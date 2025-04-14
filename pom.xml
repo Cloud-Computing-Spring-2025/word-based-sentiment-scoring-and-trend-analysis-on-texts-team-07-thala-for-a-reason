@@ -10,14 +10,14 @@
     <packaging>jar</packaging>
 
     <dependencies>
-        <!-- Hadoop Client (includes common and mapreduce-client-core) -->
+        <!-- Hadoop Client -->
         <dependency>
             <groupId>org.apache.hadoop</groupId>
             <artifactId>hadoop-client</artifactId>
             <version>2.7.4</version>
         </dependency>
 
-        <!-- Stanford NLP dependencies -->
+        <!-- Stanford NLP -->
         <dependency>
             <groupId>edu.stanford.nlp</groupId>
             <artifactId>stanford-corenlp</artifactId>
@@ -30,17 +30,38 @@
             <classifier>models</classifier>
         </dependency>
 
-        <!-- Add protobuf 3.x explicitly -->
+        <!-- Protobuf -->
         <dependency>
             <groupId>com.google.protobuf</groupId>
             <artifactId>protobuf-java</artifactId>
             <version>3.11.4</version>
         </dependency>
+
+        <!-- Hive Exec for UDF -->
+        <dependency>
+            <groupId>org.apache.hive</groupId>
+            <artifactId>hive-exec</artifactId>
+            <version>2.3.7</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.pentaho</groupId>
+                    <artifactId>pentaho-aggdesigner-algorithm</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>com.google.guava</groupId>
+                    <artifactId>guava</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.apache.curator</groupId>
+                    <artifactId>curator-recipes</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
     </dependencies>
 
     <build>
-        <finalName>trend-analysis-task4</finalName> <!-- Updated for Task 4 -->
-        
+        <finalName>bigram-udf</finalName>
+
         <plugins>
             <!-- Compiler Plugin -->
             <plugin>
@@ -51,28 +72,6 @@
                     <source>1.8</source>
                     <target>1.8</target>
                 </configuration>
-            </plugin>
-
-            <!-- Shade Plugin for Creating Fat JAR -->
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-shade-plugin</artifactId>
-                <version>3.3.0</version>
-                <executions>
-                    <execution>
-                        <phase>package</phase>
-                        <goals>
-                            <goal>shade</goal>
-                        </goals>
-                        <configuration>
-                            <transformers>
-                                <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
-                                    <mainClass>com.example.wordanalysis.TrendAnalysisDriver</mainClass> <!-- Ensure this is the correct package -->
-                                </transformer>
-                            </transformers>
-                        </configuration>
-                    </execution>
-                </executions>
             </plugin>
         </plugins>
     </build>

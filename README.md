@@ -587,3 +587,160 @@ hadoop jar word-analysis.jar com.example.wordanalysis.WordFrequencyDriver /input
 ```
 hdfs dfs -cat /output/part-r-00000
 ```
+
+# Task 5
+
+## Overview
+This task extracts and analyzes **bigrams** (pairs of consecutive words) from lemmatized historical text using a custom **Hive User-Defined Function (UDF)**. The aim is to uncover co-occurrence patterns in language across books and years.
+
+## Step 1: Input Preparation (MapReduce)
+We used `BigramPrepMapper`, `BigramPrepReducer`, and `BigramPrepDriver` to format the output from **Task 2** into lemmatized lines. Each line includes:
+```
+bookID<TAB>year<TAB>lemmatized text
+```
+This structured output was saved and used as input for Hive bigram analysis.
+
+## Step 2: Custom Hive UDF – `BigramExtractorUDF`
+
+The `BigramExtractorUDF` takes a lemmatized sentence and returns a list of bigrams (two-word combinations).
+
+**Example:**
+- **Input:** `"the king walk slowly"`
+- **Output:** `["the king", "king walk", "walk slowly"]`
+
+### Hive UDF Logic (Simplified)
+```java
+public List<String> evaluate(String input) {
+    if (input == null || input.isEmpty()) return Collections.emptyList();
+    String[] words = input.trim().split("\s+");
+    List<String> bigrams = new ArrayList<>();
+    for (int i = 0; i < words.length - 1; i++) {
+        bigrams.add(words[i] + " " + words[i + 1]);
+    }
+    return bigrams;
+}
+```
+
+## Hive Queries Used
+
+### Load the JAR and Register UDF
+```sql
+ADD JAR /root/bigram-udf.jar;
+CREATE TEMPORARY FUNCTION extract_bigrams AS 'com.example.wordanalysis.BigramExtractorUDF';
+```
+
+### Create Input Table
+```sql
+CREATE TABLE IF NOT EXISTS bigram_input (
+    book_id STRING,
+    year INT,
+    text STRING
+)
+ROW FORMAT DELIMITED
+FIELDS TERMINATED BY '\t'
+STORED AS TEXTFILE;
+```
+
+### Load Input Data
+```sql
+LOAD DATA INPATH '/user/hadoop/input/bigram_input/part-r-00000'
+OVERWRITE INTO TABLE bigram_input;
+```
+
+### Create Output Table
+```sql
+CREATE TABLE bigram_output (
+    bigram STRING,
+    freq INT
+)
+STORED AS TEXTFILE;
+```
+
+### Extract and Aggregate Bigrams
+```sql
+INSERT OVERWRITE TABLE bigram_output
+SELECT bigram, COUNT(*) AS freq
+FROM (
+  SELECT explode(extract_bigrams(text)) AS bigram
+  FROM bigram_input
+) tmp
+GROUP BY bigram;
+```
+
+## Output
+The final output was downloaded from Hive and saved to:
+```
+output5/task5_output/task5_output.txt
+```
+Each line contains a bigram and its frequency, separated by a tab.
+
+
+## Running the Job
+
+### Compilation & Packaging
+Ensure your UDF class is included in the project. Then, compile and package the project using Maven:
+```
+mvn clean package
+```
+
+### Upload the Formatted Input to HDFS
+```
+hdfs dfs -mkdir -p /user/hadoop/input/bigram_input
+hdfs dfs -put bigram_input/part-r-00000 /user/hadoop/input/bigram_input/
+```
+
+### Start Hive and Run Queries
+
+1. Launch Hive:
+```
+hive
+```
+
+2. Load the JAR and Register UDF:
+```sql
+ADD JAR /root/bigram-udf.jar;
+CREATE TEMPORARY FUNCTION extract_bigrams AS 'com.example.wordanalysis.BigramExtractorUDF';
+```
+
+3. Create Input Table:
+```sql
+CREATE TABLE IF NOT EXISTS bigram_input (
+    book_id STRING,
+    year INT,
+    text STRING
+)
+ROW FORMAT DELIMITED
+FIELDS TERMINATED BY '\t'
+STORED AS TEXTFILE;
+```
+
+4. Load Data into Table:
+```sql
+LOAD DATA INPATH '/user/hadoop/input/bigram_input/part-r-00000'
+OVERWRITE INTO TABLE bigram_input;
+```
+
+5. Create Output Table:
+```sql
+CREATE TABLE bigram_output (
+    bigram STRING,
+    freq INT
+)
+STORED AS TEXTFILE;
+```
+
+6. Run Bigram Extraction Query:
+```sql
+INSERT OVERWRITE TABLE bigram_output
+SELECT bigram, COUNT(*) AS freq
+FROM (
+  SELECT explode(extract_bigrams(text)) AS bigram
+  FROM bigram_input
+) tmp
+GROUP BY bigram;
+```
+
+### Retrieve the Output from HDFS
+```
+hdfs dfs -get /user/hive/warehouse/bigram_output/000000_0 output5/task5_output/task5_output.txt
+```

@@ -27,7 +27,7 @@
             <configuration>
               <transformers>
                 <transformer>
-                  <mainClass>com.example.wordanalysis.TrendAnalysisDriver</mainClass>
+                  <mainClass>com.example.wordanalysis.LineBuilderDriver</mainClass>
                 </transformer>
               </transformers>
             </configuration>
